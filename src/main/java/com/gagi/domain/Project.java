@@ -12,6 +12,13 @@ import jakarta.persistence.ManyToMany;
 @Entity
 public class Project {
 
+	public Project() {}
+
+	public Project(String name, String description) {
+		this.name = name;
+		this.description = description;
+	}
+	
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	private long id;
