@@ -58,4 +58,40 @@ class OtigoxTaskApplicationTests {
 			assertTrue(String.valueOf(v).contains("Email must be unique"));
 		});
 	}
+	
+	@Test
+	public void shouldSearchExistingUserByNameAndEmail() {
+		User user = new User("by_name", "by_email@host.com");
+		testClient.post().uri("/users").body(Mono.just(user), User.class)
+		.exchange().expectStatus().isCreated();
+		
+		testClient.get().uri("/users/search/findByNameAndEmail?name={name}&email={email}", "by_name", "by_email@host.com")
+		.exchange().expectStatus().is2xxSuccessful()
+		.expectBody()
+		.jsonPath("$._embedded.users[0].name").isEqualTo("by_name")
+		.jsonPath("$._embedded.users[0].email").isEqualTo("by_email@host.com")
+		.jsonPath("$._embedded.users[1]").doesNotExist();
+	}
+	
+	@Test
+	public void shouldSearchInexsitentUserByNameAndEmail() {
+		//I chose to use an email that I know there is no user for in the database
+		User user = new User("by_name", "another_by_email@host.com");
+		testClient.post().uri("/users").body(Mono.just(user), User.class)
+		.exchange().expectStatus().isCreated();
+		
+		testClient.get().uri("/users/search/findByNameAndEmail?name={name}&email={email}", "by_name", "email@host.com")
+		.exchange().expectStatus().is2xxSuccessful()
+		.expectBody()
+		.jsonPath("$._embedded.users[0]").doesNotExist();
+	}
+	
+	@Test
+	public void shouldEnforceValidityOfUserEmail() {
+		User user = new User("by_name", "email");
+		testClient.post().uri("/users").body(Mono.just(user), User.class)
+		.exchange().expectStatus().is4xxClientError()
+		.expectBody()
+		.jsonPath("$.message").isEqualTo("email must be a well-formed email address");
+	}
 }
