@@ -1,10 +1,14 @@
 package com.gagi.controller.advice;
 
+import java.util.NoSuchElementException;
+
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
@@ -13,36 +17,35 @@ import jakarta.validation.ConstraintViolationException;
 public class CustomConstraintViolationHandler {
 
 	@ExceptionHandler(ConstraintViolationException.class)
-	public ResponseEntity<CustomError> handleConstraintViolationException(ConstraintViolationException exception) {
+	@ResponseStatus(code = HttpStatus.BAD_REQUEST)
+	@ResponseBody
+	public CustomError handleException(ConstraintViolationException exception) {
 		String message = "";
 		for (ConstraintViolation<?> c : exception.getConstraintViolations()) {
 			message = message + c.getPropertyPath().toString() + " " + c.getMessage();
 		}
-		CustomError customError = new CustomError(HttpStatus.BAD_REQUEST, message);
-		return ResponseEntity.badRequest().body(customError);
+		return new CustomError(message);
 	}
 	
 	@ExceptionHandler(DataIntegrityViolationException.class)
-	public ResponseEntity<CustomError> handleConstraintViolationException(DataIntegrityViolationException exception) {
-		CustomError customError = new CustomError(HttpStatus.BAD_REQUEST, exception.getMessage());
-		return ResponseEntity.badRequest().body(customError);
+	@ResponseStatus(code = HttpStatus.BAD_REQUEST)
+	@ResponseBody
+	public CustomError handleException(DataIntegrityViolationException exception) {
+		return new CustomError(exception.getMessage());
+	}
+	
+	@ExceptionHandler(NoSuchElementException.class)
+	@ResponseStatus(code = HttpStatus.NOT_FOUND)
+	@ResponseBody
+	public CustomError handleException(NoSuchElementException exception) {
+		return new CustomError(exception.getMessage());
 	}
 
 	static class CustomError {
-		private HttpStatus status;
 		private String message;
 
-		public CustomError(HttpStatus status, String message) {
-			this.status = status;
+		public CustomError(String message) {
 			this.message = message;
-		}
-
-		public HttpStatus getStatus() {
-			return status;
-		}
-
-		public void setStatus(HttpStatus status) {
-			this.status = status;
 		}
 
 		public String getMessage() {

@@ -44,6 +44,48 @@ class UserControllerTests {
     }
 	
 	@Test
+	public void shouldUpdateExistingUserName() {
+		User user = new User("To be changed", "e@e.com");
+		User created = testClient.post().uri("/users").body(Mono.just(user), User.class)
+		.exchange().expectStatus().isCreated().expectBody(User.class)
+		.returnResult().getResponseBody();
+		
+		created.setName("Username");
+		User updated = testClient.put().uri("/users/{userId}", created.getId()).body(Mono.just(created), User.class)
+		.exchange().expectStatus().is2xxSuccessful().expectBody(User.class).returnResult().getResponseBody();
+		
+		assertEquals(created, updated);
+	}
+	
+	@Test
+	public void shouldUpdateExistingUserEmail() {
+		User user = new User("someusername", "tobechanged@e.com");
+		User created = testClient.post().uri("/users").body(Mono.just(user), User.class)
+		.exchange().expectStatus().isCreated().expectBody(User.class)
+		.returnResult().getResponseBody();
+		
+		created.setEmail("changed@email.com");
+		User updated = testClient.put().uri("/users/{userId}", created.getId()).body(Mono.just(created), User.class)
+		.exchange().expectStatus().is2xxSuccessful().expectBody(User.class).returnResult().getResponseBody();
+		
+		assertEquals(created, updated);
+	}
+	
+	@Test
+	public void shouldCreateAndThenDeleteUser() {
+		User user = new User("someusername", "tobechanged@e.com");
+		User created = testClient.post().uri("/users").body(Mono.just(user), User.class)
+		.exchange().expectStatus().isCreated().expectBody(User.class)
+		.returnResult().getResponseBody();
+		
+		testClient.delete().uri("/users/{userId}", created.getId())
+		.exchange().expectStatus().is2xxSuccessful();
+		
+		testClient.get().uri("/users/{userId}", created.getId())
+		.exchange().expectStatus().isNotFound();
+	}
+	
+	@Test
 	void shouldTryButFailToAddADifferentUserWithTheSameEmailAsAnotherUser() {
 		User user = new User("Ngadhnjim", "notunique@hotmail.com");
 		testClient.post().uri("/users").body(Mono.just(user), User.class)

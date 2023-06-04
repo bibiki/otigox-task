@@ -32,6 +32,11 @@ public class UserController {
 		return userRepository.save(user);
 	}
 
+	@GetMapping(path = "/{userId}")
+	public User getUserById(@PathVariable("userId") Long userId) {
+		return userRepository.findById(userId).orElseThrow();
+	}
+	
 	@GetMapping(params = { "page", "size" })
 	public Iterable<User> getUser(@PathParam("page") int page, @PathParam("size") int size) {
 		PageRequest pageRequest = PageRequest.of(page, size);
@@ -66,7 +71,7 @@ public class UserController {
 		return userRepository.save(user);
 	}
 
-	@DeleteMapping("/userId")
+	@DeleteMapping(path = "/{userId}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	public void delete(@PathVariable("userId") Long userId) {
 		userRepository.deleteById(userId);
