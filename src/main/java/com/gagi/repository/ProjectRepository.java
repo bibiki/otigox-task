@@ -11,4 +11,5 @@ import com.gagi.domain.Project;
 public interface ProjectRepository extends PagingAndSortingRepository<Project, Long>, CrudRepository<Project, Long>{
 
 	List<Project> findByName(@Param("name") String name);
+	
 }
