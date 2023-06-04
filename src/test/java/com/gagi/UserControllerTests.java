@@ -102,7 +102,7 @@ class UserControllerTests {
 	}
 	
 	@Test
-	public void shouldSearchExistingUserByName() {
+	public void shouldSearchExistingUsersByName() {
 		User user = new User("by_name", "by_email@host.com");
 		testClient.post().uri("/users").body(Mono.just(user), User.class)
 		.exchange().expectStatus().isCreated();

@@ -57,7 +57,6 @@ public class ProjectControllerTest {
 	
 	@Test
 	public void getProjectByIdShouldReturnProjectWithAllFields() {
-		//this test also tests the user to project assignment functionality
 		User user = new User("Project User", "project_user@company.com");
 		User otherUser = new User("Other Project User", "other_project_user@company.com");
 		User userWithId = testClient.post().uri("/users").body(Mono.just(user), User.class)
@@ -84,5 +83,26 @@ public class ProjectControllerTest {
 		assertTrue(retrieved.getId() > 0);
 		assertEquals("Project", retrieved.getName());
 		assertEquals("Project description", retrieved.getDescription());
+	}
+	
+	@Test
+	public void shouldAssignUserToProject() {
+		User user = new User("Assignable user", "assignable@email.com");
+		User userWithId = testClient.post().uri("/users").body(Mono.just(user), User.class)
+		.exchange().expectStatus().isCreated().expectBody(User.class).returnResult().getResponseBody();
+		
+		Project project = new Project("Assigned project", "Some project for user to be assigned to");
+		Project projectWithId = testClient.post().uri("/projects").body(Mono.just(project), Project.class)
+				.exchange().expectStatus().isCreated().expectBody(Project.class).returnResult().getResponseBody();
+		
+		assertTrue(projectWithId.getUsers().isEmpty());
+		
+		testClient.put().uri("/projects/assign/{projectId}/{userId}", projectWithId.getId(), userWithId.getId())
+		.exchange().expectStatus().is2xxSuccessful();
+		
+		Project retrieved = testClient.get().uri("/projects/{id}", projectWithId.getId())
+				.exchange().expectBody(Project.class).returnResult().getResponseBody();
+		
+		assertTrue(retrieved.getUsers().contains(userWithId));
 	}
 }
