@@ -10,5 +10,7 @@ import com.gagi.domain.User;
 
 public interface UserRepository extends PagingAndSortingRepository<User, Long>, CrudRepository<User, Long>{
 
-	List<User> findByNameAndEmail(@Param("name") String name, @Param("email") String email);
+	List<User> findByName(@Param("name") String name);
+	
+	User findByEmail(@Param("email") String email);
 }

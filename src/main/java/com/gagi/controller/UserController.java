@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -18,7 +19,8 @@ import com.gagi.repository.UserRepository;
 
 import jakarta.websocket.server.PathParam;
 
-@RestController("/users")
+@RestController
+@RequestMapping("/users")
 public class UserController {
 
 	@Autowired
@@ -36,6 +38,16 @@ public class UserController {
 		return userRepository.findAll(pageRequest).getContent();
 	}
 
+	@GetMapping(path = "/findbyname/{name}")
+	public Iterable<User> getByName(@PathVariable(required = true, name = "name") String name) {
+		return userRepository.findByName(name);
+	}
+
+	@GetMapping(path = "/findbyemail/{email}")
+	public User getByEmail(@PathVariable(required = true, name = "email") String email) {
+		return userRepository.findByEmail(email);
+	}
+
 	@PutMapping(path = "/{userId}", consumes = "application/json")
 	public User update(@PathVariable("userId") Long userId, @RequestBody User user) {
 		user.setId(userId);
@@ -45,16 +57,17 @@ public class UserController {
 	@PatchMapping(path = "/{userId}", consumes = "application/json")
 	public User patchUser(@PathVariable("userId") Long userId, @RequestBody User patch) {
 		User user = userRepository.findById(userId).orElseThrow();
-		if(patch.getEmail() != null) {
+		if (patch.getEmail() != null) {
 			user.setEmail(patch.getEmail());
 		}
-		if(patch.getName() != null) {
+		if (patch.getName() != null) {
 			user.setName(patch.getName());
 		}
 		return userRepository.save(user);
 	}
 
 	@DeleteMapping("/userId")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
 	public void delete(@PathVariable("userId") Long userId) {
 		userRepository.deleteById(userId);
 	}
