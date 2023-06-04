@@ -36,16 +36,30 @@ public class UserController {
 	public User getUserById(@PathVariable("userId") Long userId) {
 		return userRepository.findById(userId).orElseThrow();
 	}
-	
-	@GetMapping(params = { "page", "size" })
-	public Iterable<User> getUser(@PathParam("page") int page, @PathParam("size") int size) {
+
+	@GetMapping(path = {"", "?page={page}&size={size}"})
+	public Iterable<User> getUsers(@PathParam("page") Integer page, @PathParam("size") Integer size) {
+		if(null == page) {
+			page = 0;
+		}
+		if(null == size) {
+			size = 10;
+		}
 		PageRequest pageRequest = PageRequest.of(page, size);
 		return userRepository.findAll(pageRequest).getContent();
 	}
 
 	@GetMapping(path = "/findbyname/{name}")
 	public Iterable<User> getByName(@PathVariable(required = true, name = "name") String name) {
-		return userRepository.findByName(name);
+		PageRequest pageRequest = PageRequest.of(0, 10);
+		return userRepository.findByName(name, pageRequest);
+	}
+	
+	@GetMapping(path = "/findbyname/{name}/{page}/{size}")
+	public Iterable<User> getByNameWithPaginationSpecified(@PathVariable(required = true, name = "name") String name,
+			@PathVariable(required = true) Integer page, @PathVariable(required = true) Integer size) {
+		PageRequest pageRequest = PageRequest.of(page, size);
+		return userRepository.findByName(name, pageRequest);
 	}
 
 	@GetMapping(path = "/findbyemail/{email}")

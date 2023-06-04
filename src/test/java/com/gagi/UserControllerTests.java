@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -143,6 +144,36 @@ class UserControllerTests {
 		assertEquals("by_name", retrieved.getName());
 		assertEquals("search_by_email@host.com", retrieved.getEmail());
 
+	}
+	
+	@Test
+	public void shouldTestPaginationUsersListing() {
+		List<String> usernames = Arrays.asList("One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelfe");
+		for(String username : usernames) {
+			User user = new User(username, username + "@host.com");
+			testClient.post().uri("/users").body(Mono.just(user), User.class)
+			.exchange().expectStatus().isCreated();
+		}
+		
+		List<User> retrieved = testClient.get().uri("/users")
+				.exchange().expectStatus().is2xxSuccessful()
+				.expectBodyList(User.class).returnResult().getResponseBody();
+		assertEquals(10, retrieved.size());
+		
+		retrieved = testClient.get().uri("/users?page=1&size=10")
+				.exchange().expectStatus().is2xxSuccessful()
+				.expectBodyList(User.class).returnResult().getResponseBody();
+		assertEquals(2, retrieved.size());
+		
+		retrieved = testClient.get().uri("/users?page=1&size=7")
+				.exchange().expectStatus().is2xxSuccessful()
+				.expectBodyList(User.class).returnResult().getResponseBody();
+		assertEquals(5, retrieved.size());
+		
+		retrieved = testClient.get().uri("/users?page=3&size=8")
+				.exchange().expectStatus().is2xxSuccessful()
+				.expectBodyList(User.class).returnResult().getResponseBody();
+		assertEquals(0, retrieved.size());
 	}
 	
 	@Test
