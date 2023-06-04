@@ -6,9 +6,22 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
+
 @ControllerAdvice
 public class CustomConstraintViolationHandler {
 
+	@ExceptionHandler(ConstraintViolationException.class)
+	public ResponseEntity<CustomError> handleConstraintViolationException(ConstraintViolationException exception) {
+		String message = "";
+		for (ConstraintViolation<?> c : exception.getConstraintViolations()) {
+			message = message + c.getPropertyPath().toString() + " " + c.getMessage();
+		}
+		CustomError customError = new CustomError(HttpStatus.BAD_REQUEST, message);
+		return ResponseEntity.badRequest().body(customError);
+	}
+	
 	@ExceptionHandler(DataIntegrityViolationException.class)
 	public ResponseEntity<CustomError> handleConstraintViolationException(DataIntegrityViolationException exception) {
 		CustomError customError = new CustomError(HttpStatus.BAD_REQUEST, exception.getMessage());

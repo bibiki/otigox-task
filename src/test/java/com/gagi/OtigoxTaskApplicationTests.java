@@ -1,13 +1,21 @@
 package com.gagi;
 
+import static org.assertj.core.api.Assertions.entry;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.client.AutoConfigureWebClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
-import org.springframework.hateoas.MediaTypes;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
 import com.gagi.domain.User;
@@ -24,22 +32,15 @@ class OtigoxTaskApplicationTests {
 	@Test
 	void shouldCreateUserAndThenRetrieveTheSameUser() {
 		User user = new User("Ngadhnjim", "unique@hotmail.com");
-		testClient.post().uri("/users").body(Mono.just(user), User.class)
+		User fromServer = testClient.post().uri("/users").body(Mono.just(user), User.class)
 		.exchange().expectStatus().isCreated()
-		.expectHeader().contentType(MediaTypes.HAL_JSON)
-		.expectBody()
-		.jsonPath("$.name").isEqualTo(user.getName())
-		.jsonPath("$.email").isEqualTo(user.getEmail())
-		.jsonPath("$._links.user.href").isNotEmpty()
-		.jsonPath("$._links.user.href")
-		.value((v)-> {
-			testClient.get().uri(String.valueOf(v))
-			.exchange().expectStatus().isOk()
-			.expectHeader().contentType(MediaTypes.HAL_JSON)
-			.expectBody()
-			.jsonPath("$.name").isEqualTo(user.getName())
-			.jsonPath("$.email").isEqualTo(user.getEmail());
-		});
+		.expectHeader().contentType(MediaType.APPLICATION_JSON)
+		.expectBody(User.class).returnResult().getResponseBody();
+		
+		assertNotNull(fromServer);
+		assertEquals(user.getName(), fromServer.getName());
+		assertEquals(user.getEmail(), fromServer.getEmail());
+		assertTrue(fromServer.getId() > 0);
 		
     }
 	
@@ -60,30 +61,47 @@ class OtigoxTaskApplicationTests {
 	}
 	
 	@Test
-	public void shouldSearchExistingUserByNameAndEmail() {
+	public void shouldSearchExistingUserByName() {
 		User user = new User("by_name", "by_email@host.com");
 		testClient.post().uri("/users").body(Mono.just(user), User.class)
 		.exchange().expectStatus().isCreated();
 		
-		testClient.get().uri("/users/search/findByNameAndEmail?name={name}&email={email}", "by_name", "by_email@host.com")
+		User otherUser = new User("by_name", "other_by_email@otherhost.com");
+		testClient.post().uri("/users").body(Mono.just(otherUser), User.class)
+		.exchange().expectStatus().isCreated();
+		
+		User thirdUser = new User("shall_not_be_found", "shall@not.befound");
+		testClient.post().uri("/users").body(Mono.just(thirdUser), User.class)
+		.exchange().expectStatus().isCreated();
+		
+		List<User> retrieved = testClient.get().uri("/users/findbyname/{name}", "by_name")
 		.exchange().expectStatus().is2xxSuccessful()
-		.expectBody()
-		.jsonPath("$._embedded.users[0].name").isEqualTo("by_name")
-		.jsonPath("$._embedded.users[0].email").isEqualTo("by_email@host.com")
-		.jsonPath("$._embedded.users[1]").doesNotExist();
+		.expectBodyList(User.class).returnResult().getResponseBody();
+
+		Map<String, User> groupedBYEmail = retrieved.stream().collect(Collectors.toMap(User::getEmail, item -> item));
+		
+		assertEquals(2, retrieved.size());
+		
+		assertNotNull(groupedBYEmail.get("by_email@host.com"));
+		assertNotNull(groupedBYEmail.get("other_by_email@otherhost.com"));
+		assertNull(groupedBYEmail.get("shall@not.befound"));
+		
 	}
 	
 	@Test
-	public void shouldSearchInexsitentUserByNameAndEmail() {
-		//I chose to use an email that I know there is no user for in the database
-		User user = new User("by_name", "another_by_email@host.com");
+	public void shouldSearchExistingUserByEmail() {
+		User user = new User("by_name", "search_by_email@host.com");
 		testClient.post().uri("/users").body(Mono.just(user), User.class)
 		.exchange().expectStatus().isCreated();
 		
-		testClient.get().uri("/users/search/findByNameAndEmail?name={name}&email={email}", "by_name", "email@host.com")
-		.exchange().expectStatus().is2xxSuccessful()
-		.expectBody()
-		.jsonPath("$._embedded.users[0]").doesNotExist();
+		User retrieved = testClient.get().uri("/users/findbyemail/{email}", "search_by_email@host.com")
+				.exchange().expectStatus().is2xxSuccessful()
+				.expectBody(User.class).returnResult().getResponseBody();
+		
+		assertNotNull(retrieved);
+		assertEquals("by_name", retrieved.getName());
+		assertEquals("search_by_email@host.com", retrieved.getEmail());
+
 	}
 	
 	@Test
