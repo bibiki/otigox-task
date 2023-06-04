@@ -18,6 +18,8 @@ import com.gagi.domain.User;
 import com.gagi.repository.ProjectRepository;
 import com.gagi.repository.UserRepository;
 
+import jakarta.websocket.server.PathParam;
+
 @RestController
 @RequestMapping("/projects")
 public class ProjectController {
@@ -33,10 +35,17 @@ public class ProjectController {
 		return projectRepository.save(project);
 	}
 	
-	@GetMapping(params = {"page", "size"})
-	public Iterable<Project> getProjects(@PathVariable("page") int page, @PathVariable("size") int size) {
+	@GetMapping(path = {"", "?page={page}&size={size}"})
+	public Iterable<Project> getProjects(@PathParam("page") Integer page, @PathParam("size") Integer size) {
+		if(page == null) {
+			page = 0;
+		}
+		if(size == null) {
+			size = 10;
+		}
 		PageRequest pageRequest = PageRequest.of(page, size);
-		return projectRepository.findAll(pageRequest).getContent();
+		return projectRepository.findAll(pageRequest).getContent()
+				.stream().map(e -> new Project(e.getId(), e.getName(), e.getDescription())).toList();
 	}
 	
 	@GetMapping(path="/{projectId}")

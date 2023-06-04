@@ -21,6 +21,12 @@ public class Project {
 		this.description = description;
 	}
 	
+	public Project(Long id, String name, String description) {
+		this.id = id;
+		this.name = name;
+		this.description = description;
+	}
+	
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	private long id;

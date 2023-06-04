@@ -1,8 +1,12 @@
 package com.gagi;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.Arrays;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +14,8 @@ import org.springframework.boot.test.autoconfigure.web.client.AutoConfigureWebCl
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.http.MediaType;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.annotation.DirtiesContext.ClassMode;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
 import com.gagi.domain.Project;
@@ -19,6 +25,7 @@ import reactor.core.publisher.Mono;
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebClient
+@DirtiesContext(classMode = ClassMode.BEFORE_EACH_TEST_METHOD)
 public class ProjectControllerTest {
 
 	@Autowired
@@ -104,5 +111,60 @@ public class ProjectControllerTest {
 				.exchange().expectBody(Project.class).returnResult().getResponseBody();
 		
 		assertTrue(retrieved.getUsers().contains(userWithId));
+	}
+	
+	@Test
+	public void projectListingShouldShowProjectsWithoutUsersAssignedToThem() {
+		Project project = new Project("projectname", "project description");
+		Project projectWithId = testClient.post().uri("/projects").body(Mono.just(project), Project.class)
+		.exchange().expectStatus().isCreated().expectBody(Project.class).returnResult().getResponseBody();
+		
+		User user = new User("Assignable user", "assignable@email.com");
+		User userWithId = testClient.post().uri("/users").body(Mono.just(user), User.class)
+		.exchange().expectStatus().isCreated().expectBody(User.class).returnResult().getResponseBody();
+		
+		testClient.put().uri("/projects/assign/{projectId}/{userId}", projectWithId.getId(), userWithId.getId())
+		.exchange().expectStatus().is2xxSuccessful();
+
+		Project projectWithUser = testClient.get().uri("/projects/{projectId}", projectWithId.getId())
+				.exchange().expectStatus().is2xxSuccessful().expectBody(Project.class).returnResult().getResponseBody();
+		assertFalse(projectWithUser.getUsers().isEmpty());
+		
+		List<Project> retrieved = testClient.get().uri("/projects")
+				.exchange().expectStatus().is2xxSuccessful()
+				.expectBodyList(Project.class).returnResult().getResponseBody();
+		
+		assertTrue(retrieved.size() == 1);
+		assertTrue(retrieved.get(0).getUsers().isEmpty());
+	}
+	
+	@Test
+	public void shouldTestPaginationOfProjectListing() {
+		List<String> projectnames = Arrays.asList("One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve");
+		for(String projectname : projectnames) {
+			Project project = new Project(projectname, projectname + " description");
+			testClient.post().uri("/projects").body(Mono.just(project), Project.class)
+			.exchange().expectStatus().isCreated();
+		}
+		
+		List<Project> retrieved = testClient.get().uri("/projects")
+				.exchange().expectStatus().is2xxSuccessful()
+				.expectBodyList(Project.class).returnResult().getResponseBody();
+		assertEquals(10, retrieved.size());
+		
+		retrieved = testClient.get().uri("/projects?page=1&size=10")
+				.exchange().expectStatus().is2xxSuccessful()
+				.expectBodyList(Project.class).returnResult().getResponseBody();
+		assertEquals(2, retrieved.size());
+		
+		retrieved = testClient.get().uri("/projects?page=1&size=7")
+				.exchange().expectStatus().is2xxSuccessful()
+				.expectBodyList(Project.class).returnResult().getResponseBody();
+		assertEquals(5, retrieved.size());
+		
+		retrieved = testClient.get().uri("/projects?page=3&size=8")
+				.exchange().expectStatus().is2xxSuccessful()
+				.expectBodyList(Project.class).returnResult().getResponseBody();
+		assertEquals(0, retrieved.size());
 	}
 }
