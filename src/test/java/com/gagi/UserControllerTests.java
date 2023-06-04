@@ -23,7 +23,7 @@ import reactor.core.publisher.Mono;
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebClient
-class OtigoxTaskApplicationTests {
+class UserControllerTests {
 
 	@Autowired
 	private WebTestClient testClient;
