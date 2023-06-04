@@ -1,8 +1,9 @@
 package com.gagi.domain;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -23,9 +24,9 @@ public class Project {
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	private long id;
-	@ManyToMany(cascade = CascadeType.ALL)
-	private List<User> users;
-	@Column(nullable = false)
+	@ManyToMany
+	private List<User> users = new ArrayList<>();
+	@Column(nullable = false, unique = true)
 	private String name;
 	@Column(nullable = true)
 	private String description;
@@ -60,5 +61,23 @@ public class Project {
 
 	public void setDescription(String description) {
 		this.description = description;
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(description, id, name, users);
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Project other = (Project) obj;
+		return Objects.equals(description, other.description) && id == other.id && Objects.equals(name, other.name)
+				&& Objects.equals(users, other.users);
 	}
 }

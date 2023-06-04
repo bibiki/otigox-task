@@ -1,11 +1,15 @@
 package com.gagi;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.client.AutoConfigureWebClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
-import org.springframework.hateoas.MediaTypes;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
 import com.gagi.domain.Project;
@@ -23,22 +27,15 @@ public class ProjectsTest {
 	@Test
 	public void shouldCreateProjectAndThenRetrieveTheSameProject() {
 		Project project = new Project("project one", "a simple project");
-		testClient.post().uri("/projects").body(Mono.just(project), Project.class)
+		
+		Project retrieved = testClient.post().uri("/projects").body(Mono.just(project), Project.class)
 		.exchange().expectStatus().isCreated()
-		.expectHeader().contentType(MediaTypes.HAL_JSON)
-		.expectBody()
-		.jsonPath("$.name").isEqualTo(project.getName())
-		.jsonPath("$.description").isEqualTo(project.getDescription())
-		.jsonPath("$._links.project.href").isNotEmpty()
-		.jsonPath("$._links.project.href")
-		.value((v)-> {
-			testClient.get().uri(String.valueOf(v))
-			.exchange().expectStatus().isOk()
-			.expectHeader().contentType(MediaTypes.HAL_JSON)
-			.expectBody()
-			.jsonPath("$.name").isEqualTo(project.getName())
-			.jsonPath("$.description").isEqualTo(project.getDescription());
-		});
+		.expectHeader().contentType(MediaType.APPLICATION_JSON)
+		.expectBody(Project.class).returnResult().getResponseBody();
+		
+		project.setId(retrieved.getId());
+		
+		assertEquals(project, retrieved);
 	}
 	
 	@Test
@@ -47,12 +44,45 @@ public class ProjectsTest {
 		testClient.post().uri("/projects").body(Mono.just(project), Project.class)
 		.exchange().expectStatus().isCreated();
 		
-		testClient.get().uri("/projects/search/findByName?name={name}", "project_name")
+		Project retrieved = testClient.get().uri("/projects/findbyname/{name}", "project_name")
 		.exchange().expectStatus().isOk()
-		.expectHeader().contentType(MediaTypes.HAL_JSON)
-		.expectBody()
-		.jsonPath("$._embedded.projects[0].name").isEqualTo(project.getName())
-		.jsonPath("$._embedded.projects[0].description").isEqualTo(project.getDescription())
-		.jsonPath("$._embedded.projects[1]").doesNotExist();
+		.expectHeader().contentType(MediaType.APPLICATION_JSON)
+		.expectBody(Project.class).returnResult().getResponseBody();
+		
+		assertNotNull(retrieved);
+		
+		project.setId(retrieved.getId());
+		assertEquals(project, retrieved);
+	}
+	
+	@Test
+	public void getProjectByIdShouldReturnProjectWithAllFields() {
+		//this test also tests the user to project assignment functionality
+		User user = new User("Project User", "project_user@company.com");
+		User otherUser = new User("Other Project User", "other_project_user@company.com");
+		User userWithId = testClient.post().uri("/users").body(Mono.just(user), User.class)
+		.exchange().expectStatus().isCreated().expectBody(User.class).returnResult().getResponseBody();
+		User otherUserWithId = testClient.post().uri("/users").body(Mono.just(otherUser), User.class)
+		.exchange().expectStatus().isCreated().expectBody(User.class).returnResult().getResponseBody();
+		
+		Project project = new Project("Project", "Project description");
+
+		Project projectWithId = testClient.post().uri("/projects").body(Mono.just(project), Project.class)
+		.exchange().expectStatus().isCreated().expectBody(Project.class).returnResult().getResponseBody();
+		
+		testClient.put().uri("/projects/assign/{projectId}/{userId}", projectWithId.getId(), userWithId.getId())
+		.exchange().expectStatus().is2xxSuccessful();
+		testClient.put().uri("/projects/assign/{projectId}/{userId}", projectWithId.getId(), otherUserWithId.getId())
+		.exchange().expectStatus().is2xxSuccessful();
+		
+		Project retrieved = testClient.get().uri("/projects/{id}", projectWithId.getId())
+				.exchange().expectBody(Project.class).returnResult().getResponseBody();
+
+		assertNotNull(retrieved);
+		assertNotNull(retrieved.getUsers());
+		assertEquals(2, retrieved.getUsers().size());
+		assertTrue(retrieved.getId() > 0);
+		assertEquals("Project", retrieved.getName());
+		assertEquals("Project description", retrieved.getDescription());
 	}
 }

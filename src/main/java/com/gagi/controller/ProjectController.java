@@ -3,7 +3,6 @@ package com.gagi.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -72,5 +71,10 @@ public class ProjectController {
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	public void delete(@PathVariable("projectId") Long projectId) {
 		projectRepository.deleteById(projectId);
+	}
+	
+	@GetMapping(path="/findbyname/{name}")
+	public Project getProjectByName(@PathVariable("name") String name) {
+		return projectRepository.findByName(name);
 	}
 }
