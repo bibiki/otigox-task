@@ -16,6 +16,8 @@ import org.springframework.boot.test.autoconfigure.web.client.AutoConfigureWebCl
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.http.MediaType;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.annotation.DirtiesContext.ClassMode;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
 import com.gagi.domain.User;
@@ -24,6 +26,7 @@ import reactor.core.publisher.Mono;
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebClient
+@DirtiesContext(classMode = ClassMode.BEFORE_EACH_TEST_METHOD)
 class UserControllerTests {
 
 	@Autowired
@@ -148,7 +151,7 @@ class UserControllerTests {
 	
 	@Test
 	public void shouldTestPaginationUsersListing() {
-		List<String> usernames = Arrays.asList("One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelfe");
+		List<String> usernames = Arrays.asList("One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve");
 		for(String username : usernames) {
 			User user = new User(username, username + "@host.com");
 			testClient.post().uri("/users").body(Mono.just(user), User.class)
