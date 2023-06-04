@@ -19,7 +19,7 @@ import reactor.core.publisher.Mono;
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebClient
-public class ProjectsTest {
+public class ProjectControllerTest {
 
 	@Autowired
 	private WebTestClient testClient;
