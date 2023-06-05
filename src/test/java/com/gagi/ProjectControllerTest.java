@@ -198,4 +198,48 @@ public class ProjectControllerTest {
 		.exchange().expectStatus().isNotFound();
 		
 	}
+	
+	@Test
+	public void shouldAddMultipleUsersToMultipleProjects() {
+		Project one = new Project("one project", "one project description");
+		Project other = new Project("other project", "other project description");
+		
+		Project oneProjectCreated = testClient.post().uri("/projects").body(Mono.just(one), Project.class)
+		.exchange().expectStatus().isCreated().expectBody(Project.class).returnResult().getResponseBody();
+		Project otherProjectCreated = testClient.post().uri("/projects").body(Mono.just(other), Project.class)
+				.exchange().expectStatus().isCreated().expectBody(Project.class).returnResult().getResponseBody();
+		
+		User oneUser = new User("One user", "one@email.com");
+		User otherUser = new User("Other user", "other@email.com");
+
+		User oneUserCreated = testClient.post().uri("/users").body(Mono.just(oneUser), User.class)
+		.exchange().expectStatus().isCreated().expectBody(User.class).returnResult().getResponseBody();
+		User otherUserCreated = testClient.post().uri("/users").body(Mono.just(otherUser), User.class)
+		.exchange().expectStatus().isCreated().expectBody(User.class).returnResult().getResponseBody();
+
+		testClient.put().uri("/projects/assign/{projectId}/{userId}", oneProjectCreated.getId(), oneUserCreated.getId())
+		.exchange().expectStatus().is2xxSuccessful();
+		testClient.put().uri("/projects/assign/{projectId}/{userId}", oneProjectCreated.getId(), otherUserCreated.getId())
+		.exchange().expectStatus().is2xxSuccessful();
+		testClient.put().uri("/projects/assign/{projectId}/{userId}", otherProjectCreated.getId(), oneUserCreated.getId())
+		.exchange().expectStatus().is2xxSuccessful();
+		testClient.put().uri("/projects/assign/{projectId}/{userId}", otherProjectCreated.getId(), otherUserCreated.getId())
+		.exchange().expectStatus().is2xxSuccessful();
+
+		List<User> expectedUsers = Arrays.asList(oneUserCreated, otherUserCreated);
+		
+		Project first = testClient.get().uri("/projects/{projectId}", oneProjectCreated.getId())
+				.exchange().expectBody(Project.class).returnResult().getResponseBody();
+		Project second = testClient.get().uri("/projects/{projectId}", otherProjectCreated.getId())
+				.exchange().expectBody(Project.class).returnResult().getResponseBody();
+
+		assertNotNull(first);
+		assertNotNull(second);
+		
+		assertTrue(first.getUsers().size() == 2);
+		assertTrue(first.getUsers().containsAll(expectedUsers));
+
+		assertTrue(second.getUsers().size() == 2);
+		assertTrue(second.getUsers().containsAll(expectedUsers));
+	}
 }
