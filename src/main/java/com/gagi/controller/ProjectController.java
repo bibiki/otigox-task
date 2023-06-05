@@ -76,7 +76,7 @@ public class ProjectController {
 		projectRepository.save(project);
 	}
 	
-	@DeleteMapping("/projectId")
+	@DeleteMapping("/{projectId}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	public void delete(@PathVariable("projectId") Long projectId) {
 		projectRepository.deleteById(projectId);

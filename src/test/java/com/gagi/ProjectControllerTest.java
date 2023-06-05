@@ -167,4 +167,35 @@ public class ProjectControllerTest {
 				.expectBodyList(Project.class).returnResult().getResponseBody();
 		assertEquals(0, retrieved.size());
 	}
+	
+	@Test
+	public void shouldCreateProjectAndThenUpdateItsDescription() {
+		Project project = new Project("name", "dscrptn");
+		
+		Project created = testClient.post().uri("/projects").body(Mono.just(project), Project.class)
+		.exchange().expectStatus().isCreated().expectBody(Project.class).returnResult().getResponseBody();
+		
+		created.setDescription("description");
+		
+		Project updated = testClient.put().uri("/projects/{projectId}", created.getId()).body(Mono.just(created), Project.class)
+		.exchange().expectStatus().is2xxSuccessful().expectBody(Project.class).returnResult().getResponseBody();
+		
+		assertEquals("description", updated.getDescription());
+	}
+	
+	@Test
+	public void shouldCreateProjectAndThenDeleteIt() {
+		Project project = new Project("name", "dscrptn");
+		
+		Project created = testClient.post().uri("/projects").body(Mono.just(project), Project.class)
+		.exchange().expectStatus().isCreated().expectBody(Project.class).returnResult().getResponseBody();
+		assertNotNull(created);
+		
+		testClient.delete().uri("/projects/{projectId}", created.getId())
+		.exchange().expectStatus().is2xxSuccessful();
+		
+		testClient.get().uri("/projects/{projectId}", created.getId())
+		.exchange().expectStatus().isNotFound();
+		
+	}
 }
