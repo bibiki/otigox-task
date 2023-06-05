@@ -11,26 +11,13 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.client.AutoConfigureWebClient;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.http.MediaType;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.annotation.DirtiesContext.ClassMode;
-import org.springframework.test.web.reactive.server.WebTestClient;
 
 import com.gagi.domain.User;
 
 import reactor.core.publisher.Mono;
 
-@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebClient
-@DirtiesContext(classMode = ClassMode.BEFORE_EACH_TEST_METHOD)
-class UserControllerTests {
-
-	@Autowired
-	private WebTestClient testClient;
+class UserControllerTests extends BaseTest {
 
 	@Test
 	void shouldCreateUserAndThenRetrieveTheSameUser() {

@@ -68,14 +68,6 @@ public class ProjectController {
 		projectRepository.save(project);
 	}
 	
-	@PutMapping(path="/remove/{projectId}/{userId}")
-	@ResponseStatus(HttpStatus.NO_CONTENT)
-	public void removeUserFromProject(@PathVariable("projectId") Long projectId, @PathVariable("userId") Long userId) {
-		Project project = projectRepository.findById(projectId).orElseThrow();
-		project.getUsers().removeIf(u -> u.getId()==userId);
-		projectRepository.save(project);
-	}
-	
 	@DeleteMapping("/{projectId}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	public void delete(@PathVariable("projectId") Long projectId) {

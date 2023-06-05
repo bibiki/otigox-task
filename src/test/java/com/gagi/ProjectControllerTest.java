@@ -9,28 +9,15 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.client.AutoConfigureWebClient;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.http.MediaType;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.annotation.DirtiesContext.ClassMode;
-import org.springframework.test.web.reactive.server.WebTestClient;
 
 import com.gagi.domain.Project;
 import com.gagi.domain.User;
 
 import reactor.core.publisher.Mono;
 
-@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebClient
-@DirtiesContext(classMode = ClassMode.BEFORE_EACH_TEST_METHOD)
-public class ProjectControllerTest {
+public class ProjectControllerTest extends BaseTest {
 
-	@Autowired
-	private WebTestClient testClient;
-	
 	@Test
 	public void shouldCreateProjectAndThenRetrieveTheSameProject() {
 		Project project = new Project("project one", "a simple project");
