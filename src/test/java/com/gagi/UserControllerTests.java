@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 
+import com.gagi.domain.Project;
 import com.gagi.domain.User;
 
 import reactor.core.publisher.Mono;
@@ -173,5 +174,22 @@ class UserControllerTests extends BaseTest {
 		.exchange().expectStatus().is4xxClientError()
 		.expectBody()
 		.jsonPath("$.message").isEqualTo("email must be a well-formed email address");
+	}
+	
+	@Test
+	public void shouldFailToRemoveUserAssignedToAProject() {
+		User user = new User("username", "username@host.com");
+		User userWithId = testClient.post().uri("/users").body(Mono.just(user), User.class)
+		.exchange().expectStatus().isCreated().expectBody(User.class).returnResult().getResponseBody();
+		
+		Project project = new Project("project name", "project description");
+		Project projectWithId = testClient.post().uri("/projects").body(Mono.just(project), Project.class)
+				.exchange().expectStatus().isCreated().expectBody(Project.class).returnResult().getResponseBody();
+		
+		testClient.put().uri("/projects/assign/{projectId}/{userId}", projectWithId.getId(), userWithId.getId())
+		.exchange().expectStatus().is2xxSuccessful();
+		
+		testClient.delete().uri("/users/{userId}", userWithId.getId())
+		.exchange().expectStatus().is2xxSuccessful();
 	}
 }

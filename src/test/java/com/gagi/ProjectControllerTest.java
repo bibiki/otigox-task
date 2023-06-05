@@ -229,4 +229,47 @@ public class ProjectControllerTest extends BaseTest {
 		assertTrue(second.getUsers().size() == 2);
 		assertTrue(second.getUsers().containsAll(expectedUsers));
 	}
+	
+	@Test
+	public void shouldRemoveUsersFromProject() {
+		Project one = new Project("one project", "one project description");
+		
+		Project oneProjectCreated = testClient.post().uri("/projects").body(Mono.just(one), Project.class)
+		.exchange().expectStatus().isCreated().expectBody(Project.class).returnResult().getResponseBody();
+		
+		User oneUser = new User("One user", "one@email.com");
+		User otherUser = new User("Other user", "other@email.com");
+
+		User oneUserCreated = testClient.post().uri("/users").body(Mono.just(oneUser), User.class)
+		.exchange().expectStatus().isCreated().expectBody(User.class).returnResult().getResponseBody();
+		User otherUserCreated = testClient.post().uri("/users").body(Mono.just(otherUser), User.class)
+		.exchange().expectStatus().isCreated().expectBody(User.class).returnResult().getResponseBody();
+
+		testClient.put().uri("/projects/assign/{projectId}/{userId}", oneProjectCreated.getId(), oneUserCreated.getId())
+		.exchange().expectStatus().is2xxSuccessful();
+		testClient.put().uri("/projects/assign/{projectId}/{userId}", oneProjectCreated.getId(), otherUserCreated.getId())
+		.exchange().expectStatus().is2xxSuccessful();
+
+		List<User> expectedUsers = Arrays.asList(oneUserCreated, otherUserCreated);
+		
+		Project first = testClient.get().uri("/projects/{projectId}", oneProjectCreated.getId())
+				.exchange().expectBody(Project.class).returnResult().getResponseBody();
+
+		assertNotNull(first);
+		
+		assertTrue(first.getUsers().size() == 2);
+		assertTrue(first.getUsers().containsAll(expectedUsers));
+
+		//remove one of the users from the project
+		testClient.put().uri("/projects/remove/{projectId}/{userId}", oneProjectCreated.getId(), oneUserCreated.getId())
+		.exchange().expectStatus().is2xxSuccessful();
+		
+		first = testClient.get().uri("/projects/{projectId}", oneProjectCreated.getId())
+				.exchange().expectBody(Project.class).returnResult().getResponseBody();
+		
+		assertNotNull(first);
+		assertTrue(first.getUsers().size() == 1);
+		assertTrue(first.getUsers().contains(otherUserCreated));
+
+	}
 }
