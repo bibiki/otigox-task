@@ -177,7 +177,7 @@ class UserControllerTests extends BaseTest {
 	}
 	
 	@Test
-	public void shouldFailToRemoveUserAssignedToAProject() {
+	public void shouldFailToDeleteUserAssignedToAProject() {
 		User user = new User("username", "username@host.com");
 		User userWithId = testClient.post().uri("/users").body(Mono.just(user), User.class)
 		.exchange().expectStatus().isCreated().expectBody(User.class).returnResult().getResponseBody();
