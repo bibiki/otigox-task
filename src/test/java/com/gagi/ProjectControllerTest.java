@@ -139,17 +139,17 @@ public class ProjectControllerTest extends BaseTest {
 				.expectBodyList(Project.class).returnResult().getResponseBody();
 		assertEquals(10, retrieved.size());
 		
-		retrieved = testClient.get().uri("/projects?page=1&size=10")
+		retrieved = testClient.get().uri("/projects/1/10")
 				.exchange().expectStatus().is2xxSuccessful()
 				.expectBodyList(Project.class).returnResult().getResponseBody();
 		assertEquals(2, retrieved.size());
 		
-		retrieved = testClient.get().uri("/projects?page=1&size=7")
+		retrieved = testClient.get().uri("/projects/1/7")
 				.exchange().expectStatus().is2xxSuccessful()
 				.expectBodyList(Project.class).returnResult().getResponseBody();
 		assertEquals(5, retrieved.size());
 		
-		retrieved = testClient.get().uri("/projects?page=3&size=8")
+		retrieved = testClient.get().uri("/projects/3/8")
 				.exchange().expectStatus().is2xxSuccessful()
 				.expectBodyList(Project.class).returnResult().getResponseBody();
 		assertEquals(0, retrieved.size());

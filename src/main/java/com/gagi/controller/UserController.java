@@ -17,8 +17,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.gagi.domain.User;
 import com.gagi.repository.UserRepository;
 
-import jakarta.websocket.server.PathParam;
-
 @RestController
 @RequestMapping("/users")
 public class UserController {
@@ -37,15 +35,15 @@ public class UserController {
 		return userRepository.findById(userId).orElseThrow();
 	}
 
-	@GetMapping(path = {"", "?page={page}&size={size}"})
-	public Iterable<User> getUsers(@PathParam("page") Integer page, @PathParam("size") Integer size) {
-		if(null == page) {
-			page = 0;
-		}
-		if(null == size) {
-			size = 10;
-		}
+	@GetMapping(path = "/{page}/{size}")
+	public Iterable<User> getUsers(@PathVariable(required = true, name = "page") Integer page, @PathVariable(required = true, name = "size") Integer size) {
 		PageRequest pageRequest = PageRequest.of(page, size);
+		return userRepository.findAll(pageRequest).getContent();
+	}
+	
+	@GetMapping
+	public Iterable<User> getUsers() {
+		PageRequest pageRequest = PageRequest.of(0, 10);
 		return userRepository.findAll(pageRequest).getContent();
 	}
 

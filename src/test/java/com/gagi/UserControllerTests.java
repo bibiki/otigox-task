@@ -150,17 +150,17 @@ class UserControllerTests extends BaseTest {
 				.expectBodyList(User.class).returnResult().getResponseBody();
 		assertEquals(10, retrieved.size());
 		
-		retrieved = testClient.get().uri("/users?page=1&size=10")
+		retrieved = testClient.get().uri("/users/1/10")
 				.exchange().expectStatus().is2xxSuccessful()
 				.expectBodyList(User.class).returnResult().getResponseBody();
 		assertEquals(2, retrieved.size());
 		
-		retrieved = testClient.get().uri("/users?page=1&size=7")
+		retrieved = testClient.get().uri("/users/1/7")
 				.exchange().expectStatus().is2xxSuccessful()
 				.expectBodyList(User.class).returnResult().getResponseBody();
 		assertEquals(5, retrieved.size());
 		
-		retrieved = testClient.get().uri("/users?page=3&size=8")
+		retrieved = testClient.get().uri("/users/3/8")
 				.exchange().expectStatus().is2xxSuccessful()
 				.expectBodyList(User.class).returnResult().getResponseBody();
 		assertEquals(0, retrieved.size());
