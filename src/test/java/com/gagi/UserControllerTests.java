@@ -190,6 +190,6 @@ class UserControllerTests extends BaseTest {
 		.exchange().expectStatus().is2xxSuccessful();
 		
 		testClient.delete().uri("/users/{userId}", userWithId.getId())
-		.exchange().expectStatus().is2xxSuccessful();
+		.exchange().expectStatus().is4xxClientError();
 	}
 }

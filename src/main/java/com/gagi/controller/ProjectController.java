@@ -55,8 +55,14 @@ public class ProjectController {
 
 	@PutMapping(path = "/{projectId}", consumes = "application/json")
 	public Project update(@PathVariable("projectId") Long projectId, @RequestBody Project project) {
-		project.setId(projectId);
-		return projectRepository.save(project);
+		Project fromDb = projectRepository.findById(projectId).orElseThrow();
+		if(project.getName() != null) {
+			fromDb.setName(project.getName());
+		}
+		if(project.getDescription() != null) {
+			fromDb.setDescription(project.getDescription());
+		}
+		return projectRepository.save(fromDb);
 	}
 
 	@PutMapping(path = "/assign/{projectId}/{userId}")

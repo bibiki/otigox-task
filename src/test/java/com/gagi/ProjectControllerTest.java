@@ -272,4 +272,37 @@ public class ProjectControllerTest extends BaseTest {
 		assertTrue(first.getUsers().contains(otherUserCreated));
 
 	}
+	
+	@Test
+	public void shouldNotRemoveAssignedUsersWhenUpdatingProject() {
+		Project one = new Project("one project", "one project description");
+		
+		Project oneProjectCreated = testClient.post().uri("/projects").body(Mono.just(one), Project.class)
+		.exchange().expectStatus().isCreated().expectBody(Project.class).returnResult().getResponseBody();
+		
+		User oneUser = new User("One user", "one@email.com");
+
+		User oneUserCreated = testClient.post().uri("/users").body(Mono.just(oneUser), User.class)
+		.exchange().expectStatus().isCreated().expectBody(User.class).returnResult().getResponseBody();
+
+		testClient.put().uri("/projects/assign/{projectId}/{userId}", oneProjectCreated.getId(), oneUserCreated.getId())
+		.exchange().expectStatus().is2xxSuccessful();
+		
+		oneProjectCreated = testClient.get().uri("/projects/{projectId}", oneProjectCreated.getId())
+				.exchange().expectStatus().is2xxSuccessful().expectBody(Project.class).returnResult().getResponseBody();
+		
+		assertNotNull(oneProjectCreated);
+		assertNotNull(oneProjectCreated.getUsers());
+		assertTrue(oneProjectCreated.getUsers().contains(oneUserCreated));
+		
+		Project update = new Project(oneProjectCreated.getName(), "updated description of this project");
+		
+		Project oneProjectUpdated = testClient.put().uri("/projects/{projectId}", oneProjectCreated.getId()).body(Mono.just(update), Project.class)
+		.exchange().expectStatus().is2xxSuccessful().expectBody(Project.class).returnResult().getResponseBody();
+		
+		assertNotNull(oneProjectUpdated);
+		assertNotNull(oneProjectUpdated.getUsers());
+		assertTrue(oneProjectUpdated.getUsers().contains(oneUserCreated));
+
+	}
 }
