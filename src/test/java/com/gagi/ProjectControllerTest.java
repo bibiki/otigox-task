@@ -122,6 +122,7 @@ public class ProjectControllerTest extends BaseTest {
 				.expectBodyList(Project.class).returnResult().getResponseBody();
 		
 		assertTrue(retrieved.size() == 1);
+		assertNotNull(retrieved.get(0).getUsers());
 		assertTrue(retrieved.get(0).getUsers().isEmpty());
 	}
 	
@@ -162,12 +163,13 @@ public class ProjectControllerTest extends BaseTest {
 		Project created = testClient.post().uri("/projects").body(Mono.just(project), Project.class)
 		.exchange().expectStatus().isCreated().expectBody(Project.class).returnResult().getResponseBody();
 		
-		created.setDescription("description");
+		Project updated = new Project("name", "description");
 		
-		Project updated = testClient.put().uri("/projects/{projectId}", created.getId()).body(Mono.just(created), Project.class)
+		Project afterUpdate = testClient.put().uri("/projects/{projectId}", created.getId()).body(Mono.just(updated), Project.class)
 		.exchange().expectStatus().is2xxSuccessful().expectBody(Project.class).returnResult().getResponseBody();
 		
-		assertEquals("description", updated.getDescription());
+		assertNotNull(afterUpdate);
+		assertEquals("description", afterUpdate.getDescription());
 	}
 	
 	@Test
